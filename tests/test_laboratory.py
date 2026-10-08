@@ -542,6 +542,9 @@ def test_pmkid_fallback_builds_bssid_scoped_non_broadcast_command(lab, monkeypat
     from app.core.interface_manager import WirelessInterface
 
     service, project = lab
+    # The fake job records commands directly, so this test must not depend on
+    # hcxdumptool being installed on the CI runner.
+    monkeypatch.setattr(laboratory.shutil, "which", lambda _tool: "/usr/bin/tool")
     monkeypatch.setattr(
         laboratory.InterfaceManager,
         "list_interfaces",
