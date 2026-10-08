@@ -1,0 +1,22 @@
+{
+  "ssid": "LAB-NETWORK-01",
+  "bssid": "02:00:00:00:00:01",
+  "station": "02:00:00:00:00:02",
+  "channel": 11,
+  "auth_frames": 5,
+  "association_frames": 10,
+  "eapol_total": 4,
+  "m1_count": 2,
+  "m2_count": 0,
+  "m3_count": 1,
+  "m4_count": 1,
+  "valid_eapol_pairs": 0,
+  "pmkid_total": 2,
+  "pmkid_best": 1,
+  "pmkid_written": 1,
+  "deauth_total": 385,
+  "capture_format": "pcap",
+  "radiotap_present": false,
+  "capture_duration_seconds": 24,
+  "warnings": ["excessive deauthentication/disassociation frames"]
+}

@@ -1,0 +1,9 @@
+{
+  "easy": {"interfaces": [{"name": "labwifi0", "phy": "phy-lab", "driver": "mockwifi", "mac": "02:00:00:00:00:10", "mode": "managed"}], "networks": [], "stations": [], "capture": "ready", "recovery": "queued", "gpu": "available"},
+  "capture-partial": {"interfaces": [{"name": "labwifi0", "phy": "phy-lab", "driver": "mockwifi", "mac": "02:00:00:00:00:10", "mode": "monitor"}], "networks": [{"ssid": "LAB-NETWORK-01", "bssid": "02:00:00:00:00:01", "channel": 6, "rssi": -65, "security": "WPA2", "vendor": "Synthetic Vendor"}], "stations": [{"mac": "02:00:00:00:00:02", "bssid": "02:00:00:00:00:01", "rssi": -72, "frames": 11, "vendor": "Synthetic Client"}], "capture": "partial", "recovery": "queued", "gpu": "available"},
+  "capture-valid": {"interfaces": [{"name": "labwifi0", "phy": "phy-lab", "driver": "mockwifi", "mac": "02:00:00:00:00:10", "mode": "monitor"}], "networks": [{"ssid": "LAB-NETWORK-01", "bssid": "02:00:00:00:00:01", "channel": 6, "rssi": -48, "security": "WPA2", "vendor": "Synthetic Vendor"}], "stations": [{"mac": "02:00:00:00:00:02", "bssid": "02:00:00:00:00:01", "rssi": -51, "frames": 684, "vendor": "Synthetic Client"}], "capture": "valid", "recovery": "queued", "gpu": "available"},
+  "dictionary-exhausted": {"extends": "capture-valid", "recovery": "search_space_exhausted"},
+  "recovered": {"extends": "capture-valid", "recovery": "password_recovered"},
+  "gpu-missing": {"extends": "capture-valid", "gpu": "missing"},
+  "adapter-missing": {"interfaces": [], "networks": [], "stations": [], "capture": "ready", "recovery": "queued", "gpu": "available"}
+}

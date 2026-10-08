@@ -1,0 +1,19 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install pytest sqlalchemy pydantic psutil ruff black
+      - run: ./scripts/check-release.sh
+      - run: ./scripts/build-deb.sh
+      - run: sha256sum dist/*.deb > dist/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with: {name: wifi-lab-auditor-release, path: dist/}
+      - uses: softprops/action-gh-release@v2
+        with: {files: dist/*}

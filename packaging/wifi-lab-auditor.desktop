@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=WiFi Lab Auditor
+Comment=Authorized Wi-Fi laboratory auditing workstation
+Exec=wifi-lab-auditor
+Terminal=false
+Categories=System;Utility;

@@ -1,0 +1,11 @@
+name: Bug report
+description: Report a reproducible problem without private evidence.
+body:
+  - type: input
+    attributes: {label: App version}
+  - type: input
+    attributes: {label: Kali version and kernel}
+  - type: input
+    attributes: {label: Adapter, driver, and tool versions}
+  - type: textarea
+    attributes: {label: Steps, expected behavior, and actual behavior, description: 'Do NOT upload real passwords, hashes, PCAPs, or private identifiers.'}

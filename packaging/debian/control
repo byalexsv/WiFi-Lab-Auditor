@@ -1,0 +1,9 @@
+Package: wifi-lab-auditor
+Version: @VERSION@
+Architecture: all
+Section: utils
+Priority: optional
+Maintainer: WiFi Lab Auditor <local@localhost>
+Depends: python3 (>= 3.12), python3-pyside6 | python3-pyqt6, python3-sqlalchemy, network-manager, iw, aircrack-ng, tshark, wireshark-common, hcxtools, hcxdumptool, hashcat, policykit-1
+Description: Local, scope-controlled Wi-Fi laboratory auditing workstation
+ Desktop application for explicitly authorized Wi-Fi laboratory assessments.

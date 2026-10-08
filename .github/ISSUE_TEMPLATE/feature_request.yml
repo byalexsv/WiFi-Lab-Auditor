@@ -1,0 +1,9 @@
+name: Feature request
+description: Propose an authorized-lab improvement.
+body:
+  - type: textarea
+    attributes: {label: Problem}
+  - type: textarea
+    attributes: {label: Proposed functionality}
+  - type: textarea
+    attributes: {label: Authorized use case}
