@@ -1,100 +1,184 @@
-# WiFi Lab Auditor
+<div align="center">
+  <img src="docs/assets/wifi-lab-hero.svg" alt="WiFi Lab Auditor" width="100%" />
 
-Aplicación de escritorio para Kali/Linux: inventario Wi-Fi, capturas reales con `dumpcap`, importación PCAP/PCAPNG, análisis con TShark/HCX y recuperación offline con Hashcat. La recuperación permite seleccionar varios diccionarios locales y probarlos secuencialmente, dejando cada intento en el historial.
+  # WiFi Lab Auditor
 
-La interfaz usa controles Qt nativos y está organizada por proyecto: **Redes → Capturas → Recuperación**. Los archivos y resultados se guardan en el equipo.
+  **Laboratorio inalámbrico local para inventario, captura y análisis de evidencia.**
 
-## Arranque
+  Diseñado para evaluaciones de redes propias o expresamente autorizadas, con alcance por proyecto, BSSID y cliente.
+
+  <p>
+    <a href="https://github.com/byalexsv/WiFi-Lab-Auditor/actions/workflows/tests.yml"><img src="https://github.com/byalexsv/WiFi-Lab-Auditor/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests" /></a>
+    <a href="https://github.com/byalexsv/WiFi-Lab-Auditor/actions/workflows/lint.yml"><img src="https://github.com/byalexsv/WiFi-Lab-Auditor/actions/workflows/lint.yml/badge.svg?branch=main" alt="Lint" /></a>
+    <a href="https://github.com/byalexsv/WiFi-Lab-Auditor/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-8b5cf6?style=flat-square" alt="GPL-3.0 license" /></a>
+    <img src="https://img.shields.io/badge/Python-3.12%2B-00b8d9?style=flat-square&logo=python&logoColor=white" alt="Python 3.12 or newer" />
+    <img src="https://img.shields.io/badge/Qt6-native-00d9ff?style=flat-square&logo=qt&logoColor=white" alt="Native Qt 6 interface" />
+  </p>
+</div>
+
+> [!IMPORTANT]
+> WiFi Lab Auditor solo debe utilizarse sobre redes, dispositivos y capturas que puedas auditar legalmente. El proyecto conserva controles de alcance: una red descubierta no entra automáticamente en el laboratorio y cada operación se asocia a un proyecto y a un BSSID autorizado.
+
+## Qué es
+
+WiFi Lab Auditor es una aplicación de escritorio Qt para Kali/Linux que reúne en un mismo flujo:
+
+- inventario de radios Wi-Fi consultado desde NetworkManager;
+- proyectos con registro explícito de autorización;
+- captura real con `dumpcap` sobre el BSSID seleccionado;
+- importación y análisis de PCAP/PCAPNG con TShark y HCX;
+- descubrimiento de clientes visibles para el BSSID actual;
+- recuperación offline acotada con Hashcat y uno o varios diccionarios locales;
+- historial persistente, evidencia, diagnósticos, cancelación y limpieza local.
+
+La aplicación trabaja localmente. No sube capturas, hashes, contraseñas ni resultados a ningún servicio externo.
+
+## Flujo de trabajo
+
+```mermaid
+flowchart LR
+    A[Proyecto autorizado] --> B[Redes Wi-Fi]
+    B --> C[BSSID exacto]
+    C --> D[Captura o importación]
+    D --> E[Análisis de evidencia]
+    E --> F{Material WPA compatible}
+    F -->|Sí| G[Diccionarios locales]
+    G --> H[Hashcat acotado]
+    F -->|No| I[Diagnóstico y nueva captura]
+    H --> J[Historial local]
+```
+
+Cada radio se identifica por su BSSID. Un mismo SSID puede aparecer varias veces porque tiene radios 2,4 GHz, 5 GHz o 6 GHz distintas; la captura debe apuntar a la radio donde está asociado el cliente autorizado.
+
+## Inicio rápido
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/byalexsv/WiFi-Lab-Auditor.git
+cd WiFi-Lab-Auditor
+```
+
+### 2. Preparar Kali/Linux
+
+El instalador crea el entorno virtual y comprueba las herramientas disponibles:
 
 ```bash
 ./scripts/install-kali.sh
+```
+
+Si el equipo aún no tiene las dependencias del sistema, instálalas una vez:
+
+```bash
+sudo apt install \
+  python3-venv python3-pyqt6 python3-sqlalchemy \
+  network-manager iw aircrack-ng tshark wireshark-common \
+  hcxtools hcxdumptool hashcat policykit-1
+```
+
+### 3. Ejecutar
+
+```bash
 ./scripts/run.sh
 ```
 
-Requiere Python 3.12+, Qt6 y SQLAlchemy. El instalador comprueba dependencias, prepara el entorno y crea el comando local; no cambia permisos ni configuración de red. Si faltan herramientas en Kali:
+La aplicación debe ejecutarse como usuario normal desde la sesión gráfica. No es necesario abrir toda la interfaz con `sudo`. El indicador superior muestra `SYSTEM ONLINE` cuando las comprobaciones del backend pasan y `SYSTEM OFFLINE` cuando falta una herramienta o falla el acceso requerido.
 
-```bash
-sudo apt install python3-venv python3-pyqt6 python3-sqlalchemy network-manager iw aircrack-ng tshark wireshark-common hcxtools hcxdumptool hashcat policykit-1
-```
+## Primer laboratorio
 
-Ejecuta la app como usuario normal desde tu sesión gráfica. También puedes activar `.venv` y usar `wifi-lab-auditor`. No hace falta ejecutar toda la interfaz con `sudo`.
+1. Abre **Proyectos**, crea un proyecto y registra quién autoriza la evaluación.
+2. En **Redes Wi-Fi**, ejecuta **Buscar redes**, selecciona el BSSID correcto y añádelo al proyecto.
+3. En **Capturas**, selecciona la red autorizada. El canal y la frecuencia se rellenan desde el inventario.
+4. Si el adaptador está gestionado, confirma el cambio y pulsa **Preparar monitor…**. La transición utiliza autorización del sistema mediante polkit y puede desconectar ese adaptador.
+5. Mantén un cliente autorizado asociado a la radio seleccionada. La interfaz observa automáticamente clientes que transmiten datos o tienen una asociación real.
+6. Pulsa **Iniciar captura**. La duración recomendada es de 120 segundos cuando se usa la reconexión automática.
+7. Selecciona el registro terminado y revisa **Evidencia**. Los mensajes EAPOL observados y el material convertible se muestran por separado.
 
-## Capturar desde el adaptador
-
-1. En **Proyectos**, guarda nombre, responsable y referencia de autorización. El proyecto queda seleccionado en la barra superior.
-2. En **Redes Wi-Fi**, selecciona la red de tu laboratorio y pulsa **Añadir red seleccionada al proyecto**. Confirma el BSSID incluido en el permiso. También puedes registrarlo manualmente desde Capturas.
-3. En **Capturas**, elige la red autorizada; el adaptador y la frecuencia se rellenan desde el inventario. Ajusta la duración solo si necesitas otra ventana.
-4. Si la interfaz aparece como `managed`, marca la confirmación y pulsa **Preparar monitor…**. La aplicación pedirá autorización del sistema mediante polkit para ejecutar `airmon-ng`; esto puede desconectar la conexión Wi-Fi de ese adaptador. Actualiza los adaptadores y selecciona la interfaz `monitor` creada. Un adaptador dedicado evita afectar tu conexión habitual.
-5. Pulsa **Iniciar captura**. Se ejecuta `dumpcap` con filtro para la red autorizada, límite de 64 MB y duración máxima de una hora. La ventana recomendada es de 120 segundos; si la reconexión automática está activa, la app aplica como mínimo esa duración para dejar tiempo al intento dirigido y a los cuatro mensajes EAPOL. **Detener y conservar archivo** finaliza el proceso y guarda lo capturado; después puedes pulsar **Analizar selección**.
-
-Para obtener el cliente ya no tienes que escribir una MAC: al seleccionar una interfaz monitor la aplicación observa automáticamente el BSSID durante 20 segundos y llena **Cliente detectado automáticamente**. Cuando encuentra uno, deja preparada la autorización y una reconexión dirigida sobre ese único cliente. Si el propio equipo tiene otra interfaz gestionada conectada al BSSID autorizado, la aplicación la desconecta y reconecta primero mediante NetworkManager; si no, usa el cliente autorizado observado. La captura continúa durante la ventana recomendada para observar los cuatro mensajes EAPOL. Si no aparece, pulsa **Volver a detectar**. Nunca se acepta un cliente fuera del alcance del proyecto ni una solicitud de difusión contra todos los clientes; el adaptador debe estar en modo monitor y `aireplay-ng` debe estar instalado.
-
-La frecuencia se obtiene automáticamente de la frecuencia que informa NetworkManager (con el canal como respaldo) y no se acepta un valor MHz arbitrario que pueda desincronizar la radio. La captura usa una interfaz que ya está en modo monitor e intenta fijar el canal autorizado. Algunos controladores rechazan el cambio de canal desde `dumpcap`; en ese caso se reintenta usando el canal que ya configuró `airmon-ng`, y ambos intentos quedan en los logs del artefacto. No se intenta cambiar canales en una interfaz gestionada. El adaptador, su controlador, los permisos de captura y el dominio regulatorio determinan lo que puede capturarse. La reconexión automática es una acción dirigida, explícita y única sobre el cliente seleccionado; el material de autenticación debe estar presente en el tráfico observado.
-
-La aplicación conserva el resultado de la captura mientras actualiza los adaptadores; no reinicia la detección de clientes al terminar. Si `aireplay-ng` transmite pero registra `0 ACKs`, la reconexión se marca como no confirmada y se muestra el motivo. Tras la captura EAPOL y el único intento dirigido, el modo automático ejecuta un segundo método PMKID limitado al BSSID autorizado con `hcxdumptool`, sin desautenticación masiva ni sondeos de difusión. Si cualquiera de los dos métodos produce material convertible, aparece una captura lista para recuperación; si ambos fallan, se conservan los dos diagnósticos.
-
-Si **Redes Wi-Fi** muestra cero resultados mientras el adaptador aparece como `monitor`, NetworkManager no puede explorar desde ese modo. Pulsa **Gestionar adaptador**, restaura el adaptador en **Capturas**, vuelve a **Redes Wi-Fi** y pulsa **Buscar redes**. Antes de registrar una red seleccionada, elige el proyecto activo en la barra superior. Al volver a capturar, selecciona el BSSID y canal del módem correcto; cada módem puede anunciar un BSSID diferente.
-
-**Permisos:** Diagnóstico consulta `dumpcap -D`. Si falla, configura los permisos de captura de Wireshark de tu distribución. En Kali/Debian se pueden gestionar con `sudo dpkg-reconfigure wireshark-common`; cuando se use el grupo `wireshark`, añade tu usuario a ese grupo y vuelve a iniciar sesión. La app no modifica esos permisos automáticamente.
-
-## Importar y analizar una captura propia
-
-1. Selecciona un proyecto y registra el BSSID autorizado, aunque no aparezca en el inventario actual.
-2. En **Capturas**, pulsa **Importar archivo** y selecciona un PCAP/PCAPNG de hasta 512 MiB.
-3. Se conserva una copia del original y se registra su SHA-256. El original no se modifica.
-4. TShark cuenta tramas del BSSID, EAPOL y mensajes M1–M4 sobre las primeras 200 000 tramas del archivo. HCX convierte el archivo completo y se conserva únicamente material del BSSID autorizado.
-5. La ficha distingue mensajes observados de material WPA convertible. Contar M1–M4 no se presenta como prueba de un handshake válido.
-
-Las capturas sin material recuperable siguen disponibles. Un error del parser aparece como error; no se convierte en un éxito simulado.
-
-Una captura puede contener balizas y tráfico de datos sin contener una autenticación EAPOL. En ese caso el registro muestra las tramas observadas, los clientes y frecuencias vistos, y clasifica el siguiente paso: BSSID no visto, cliente sin nueva autenticación, asociación sin EAPOL o tráfico sin material convertible. El registro no significa que la captura haya fallado ni que el BSSID sea automáticamente recuperable.
+La aplicación usa una sola reconexión dirigida sobre el cliente seleccionado y autorizado. No ejecuta campañas de difusión ni desautenticaciones masivas. Si no hay material recuperable, conserva la captura y explica si faltó el BSSID, tráfico de datos o una autenticación EAPOL.
 
 ## Recuperación offline
 
-1. Abre **Recuperación** y selecciona una captura cuyo análisis haya producido material WPA compatible.
-2. Pulsa **Añadir diccionarios…** y selecciona varios archivos a la vez con Ctrl o Shift. Se admiten archivos de texto sin comprimir de hasta 2 GiB; puedes quitar elementos seleccionados o limpiar la lista sin volver a abrir el selector.
-3. Define un tiempo máximo entre 10 y 3600 segundos. Ese límite se aplica a cada diccionario, no al lote completo.
-4. Pulsa **Iniciar recuperación**. Hashcat prueba los diccionarios en el orden mostrado, sin intervención entre ellos, y se detiene cuando encuentra un resultado recuperable. Mientras trabaja, la interfaz muestra el nombre y posición del diccionario actual, las pruebas realizadas, el total, el porcentaje, la velocidad y las coincidencias verificadas. Cada diccionario ejecutado queda como una fila independiente en el historial.
-5. Consulta el historial. Los estados distinguen recuperación, resultado parcial, diccionario agotado, interrupción y error. Un límite de tiempo no equivale a agotar el diccionario.
-6. **Mostrar resultado local** revela las claves recuperadas en un diálogo. No se suben ni se copian automáticamente al portapapeles.
+La recuperación solo se habilita para una captura cuyo análisis haya producido material WPA compatible y dentro del alcance del proyecto.
 
-No hay garantía de recuperar una clave. WPA3-SAE y redes empresariales no se convierten automáticamente en material WPA-PSK 22000. Esta versión ofrece recuperación por diccionario; no implementa campañas distribuidas, máscaras ni reanudación de Hashcat. Un trabajo interrumpido puede iniciarse de nuevo, conservando su historial anterior.
+1. Abre **Recuperación** y selecciona la captura preparada.
+2. Pulsa **Añadir diccionarios…** y selecciona varios archivos con `Ctrl` o `Shift`.
+3. La cola respeta el orden en que aparecen los archivos. También puedes quitar seleccionados o limpiar la lista.
+4. Define el tiempo máximo por diccionario, entre 10 y 3600 segundos.
+5. Pulsa **Iniciar recuperación**. Los diccionarios se prueban secuencialmente sin intervención entre ellos.
 
-## Inventario y diagnóstico
+La pantalla muestra el diccionario actual, su posición en la cola, pruebas realizadas, velocidad, porcentaje y coincidencias verificadas. Cada diccionario ejecutado crea una fila propia en el historial. La cola se detiene cuando encuentra un resultado recuperable; si un diccionario se agota, continúa con el siguiente. El resultado se conserva localmente y solo se muestra mediante **Mostrar resultado local…**.
 
-El inventario inicial consulta las redes conocidas por NetworkManager sin forzar escaneo. **Buscar redes** solicita un escaneo normal; no es una captura pasiva en modo monitor. Cada fila representa un BSSID (una radio concreta), por eso un mismo SSID puede aparecer en 2.4 GHz y 5/6 GHz. La tabla muestra la banda, el canal y el BSSID para que puedas escoger la radio autorizada; la identidad del objetivo siempre es el BSSID, no solo el nombre de la red. Hay filtros y exportación CSV. La señal real se muestra en porcentaje, sin inventar valores dBm.
+Un tiempo máximo no equivale a agotar el diccionario. WPA3-SAE y redes empresariales no se convierten automáticamente en material WPA-PSK 22000.
 
-**Adaptadores** consulta `iw`. **Diagnóstico** comprueba herramientas, NetworkManager, radio Wi-Fi y permisos/interfaces de `dumpcap`. El indicador superior muestra `SYSTEM ONLINE` en verde cuando todas las comprobaciones del backend pasan y `SYSTEM OFFLINE` en rojo cuando falta una herramienta o falla el acceso a red/captura. Las consultas se ejecutan fuera del hilo de la interfaz. Un trabajo de laboratorio bloquea cambios de proyecto y nuevas exploraciones de red hasta terminar.
+## Qué ocurre con los datos
 
-## Persistencia
+| Dato | Ubicación | Comportamiento |
+| --- | --- | --- |
+| Base de datos real | `~/.local/share/wifi-lab-auditor/auditor.sqlite3` | Proyectos, alcance, estados e historial |
+| Capturas y análisis | `~/.local/share/wifi-lab-auditor/artifacts/` | Un directorio privado por operación |
+| Base de demostración | `demo.sqlite3` | Solo se usa con `WIFI_LAB_MOCK=1` |
+| Resultado de recuperación | Dentro del directorio privado de la operación | No se copia al portapapeles ni se envía fuera del equipo |
 
-- Base real: `~/.local/share/wifi-lab-auditor/auditor.sqlite3`.
-- Capturas y resultados: subdirectorio `artifacts`, con un directorio privado por operación.
-- La base de demostración es `demo.sqlite3`. No ejecuta captura ni recuperación reales.
-- Al cerrar, se solicita la detención del proceso propio y se espera a guardar su estado. En el siguiente arranque, trabajos inconclusos quedan marcados como interrumpidos. Solo se permite una instancia por base de datos.
+El repositorio nunca debe contener PCAP, hashes, diccionarios, credenciales, BSSID privados ni bases de datos personales. El comprobador de release bloquea esos archivos antes de publicar.
 
-No se eliminan automáticamente capturas ni resultados. Haz copias de seguridad y gestiona el espacio local. Los archivos importados pueden contener tráfico adicional al BSSID seleccionado; el análisis y la recuperación se restringen al alcance registrado.
+## Modo demostración y pruebas
 
-## Pruebas y demo
+Para explorar la interfaz sin radio ni herramientas de captura:
 
 ```bash
-./scripts/test.sh
-# Prueba opcional con Hashcat real y una clave sintética conocida:
-WIFI_LAB_TEST_HASHCAT=1 ./scripts/test.sh
-# Interfaz con inventario sintético:
 WIFI_LAB_MOCK=1 WIFI_LAB_MOCK_SCENARIO=capture-valid ./scripts/run.sh
 ```
 
-Las pruebas generan capturas sintéticas localmente. Si TShark y HCX están instalados, verifican su conversión real; la prueba opcional comprueba la clave devuelta por Hashcat. También cubren autorización, cancelación, estados de error, persistencia y controles de la interfaz.
-
-**Validación pendiente para despliegue:** captura por radio con el BSSID y adaptador autorizados del operador, distintas combinaciones de controlador/permisos y la instalación/actualización en un sistema limpio. Las pruebas offline no sustituyen esa aceptación de hardware.
+Para validar el proyecto completo:
 
 ```bash
-./scripts/build-deb.sh
+./scripts/test.sh
 ./scripts/check-release.sh
 ```
 
-El paquete se escribe en `dist/`. No incluye bases, capturas, resultados ni cachés.
-Para regenerar también el paquete de compatibilidad `0.1.0` con el código actual, ejecuta `PACKAGE_VERSION=0.1.0 ./scripts/build-deb.sh` antes del comando normal.
+La suite cubre alcance, persistencia, cancelación, análisis, recuperación, controles de la interfaz y protección contra archivos sensibles. Las pruebas usan datos sintéticos y no requieren root, GPU, radio real ni capturas privadas.
 
-Diseño basado en [ui-skills](https://github.com/ibelick/ui-skills), adaptando `baseline-ui` y accesibilidad a Qt. Consulta [DESIGN.md](DESIGN.md) y [la arquitectura](docs/architecture.md).
+## Arquitectura
+
+```text
+UI Qt ──> servicios core ──> adaptadores de sistema
+  │            │                    ├── NetworkManager / iw
+  │            │                    ├── dumpcap
+  │            │                    ├── TShark / HCX
+  │            │                    └── Hashcat
+  │            └── ScopeManager ──> SQLite
+  └── Mock provider ──> fixtures sintéticos
+```
+
+- `app/ui/`: ventanas, páginas, estados y controles Qt.
+- `app/core/`: alcance, procesos acotados, inventario, captura, análisis y recuperación.
+- `app/database/`: modelos SQLite y migraciones.
+- `app/models/`: tipos de evidencia y estados públicos.
+- `fixtures/`: escenarios sintéticos para pruebas y demostración.
+- `plugins/`: puntos de extensión para perfiles, parsers y reportes.
+- `docs/`: arquitectura, desarrollo, vendors y proceso de release.
+
+Consulta la [arquitectura detallada](docs/architecture.md) y la [guía de desarrollo](docs/development.md).
+
+## Calidad y release
+
+El repositorio ejecuta automáticamente pruebas y lint con GitHub Actions. Para crear un paquete Debian local:
+
+```bash
+./scripts/build-deb.sh
+```
+
+El paquete aparece en `dist/`, que está excluido del repositorio. Para una versión nueva, actualiza `pyproject.toml` y `CHANGELOG.md`, ejecuta `./scripts/check-release.sh` y crea un tag `vX.Y.Z`. El flujo de release construye el paquete y publica su checksum cuando el repositorio tiene habilitados los permisos de releases.
+
+## Contribuir
+
+1. Crea una rama enfocada para el cambio.
+2. Ejecuta `./scripts/test.sh` y `./scripts/check-release.sh`.
+3. Mantén el alcance por proyecto y no incluyas datos privados.
+4. Describe la validación realizada en el pull request.
+
+Lee [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) y la plantilla de pull request antes de enviar cambios.
+
+## Licencia
+
+Distribuido bajo [GNU GPL v3.0](LICENSE).
